@@ -11,8 +11,9 @@ export class GridChecker extends HTMLElement {
         this.color = 'rgba(200, 50, 200, .4)';
         this.key = 'g';
         this.debug = false;
-        this.renderAmount = 0;
         this.isListeningToAttributes = false;
+        this.renderAmount = 0;
+        this.html = this;
         this.shadow = this.attachShadow({ mode: 'open' });
         if (options)
             this.createElement(options);
@@ -20,29 +21,27 @@ export class GridChecker extends HTMLElement {
     static get observedAttributes() {
         return GridChecker.attributes;
     }
-    attributeChangedCallback(name, oldValue, newValue) {
+    attributeChangedCallback(name, _, value) {
         if (!this.isListeningToAttributes)
             return;
         if (!this.attributesAreValid())
             return;
-        this.setProperty(name, newValue);
+        this.setProperty(name, value);
     }
     connectedCallback() {
         this.init();
-        this.isListeningToAttributes = true;
-        if (!this.attributesAreValid())
-            return;
         this.render();
         this.setRemainingWidthValue(false);
         this.render();
         this.listenKey();
+        this.isListeningToAttributes = true;
         if (this.debug)
             this.log();
     }
     init() {
         if (!this.attributesAreValid())
             return;
-        this.columns = this.getAttribute('columns') || this.columns;
+        this.columns = Math.floor(Number(this.getAttribute('columns'))) || this.columns;
         this.gridWidth = this.getAttribute('grid-width') || this.gridWidth;
         this.columnWidth = this.getAttribute('column-width') || this.columnWidth;
         this.gapWidth = this.getAttribute('gap-width') || this.gapWidth;
@@ -75,7 +74,7 @@ export class GridChecker extends HTMLElement {
     setProperty(attribute, value) {
         switch (attribute) {
             case 'columns':
-                this.columns = value;
+                this.columns = Math.floor(Number(value));
                 this.render();
                 this.setRemainingWidthValue(true);
                 break;
@@ -109,7 +108,11 @@ export class GridChecker extends HTMLElement {
             case 'key':
                 this.key = value;
                 break;
-            case 'debug': this.debug = this.getAttribute('debug') !== null ? true : false;
+            case 'debug':
+                this.debug = !(this.getAttribute('debug') === "false"
+                    || this.getAttribute('debug') === "0"
+                    || this.getAttribute('debug') === null);
+                break;
             default: this.warn(`GridChecker warning: unknown attribute "${attribute}".`);
         }
         if (this.debug)
@@ -148,22 +151,16 @@ export class GridChecker extends HTMLElement {
             console.log(`rendered: ${this.renderAmount}`);
         }
     }
-    getComputedWidthValueFromClientRect(prop) {
-        var _a, _b, _c, _d, _e, _f, _g, _h;
-        const n = Number(this.columns);
-        if (prop === 'grid-width') {
-            const cw = Number((_a = this.shadow.querySelector('.column-container div')) === null || _a === void 0 ? void 0 : _a.getBoundingClientRect().width), gStart = Number((_b = this.shadow.querySelector('.column-container div')) === null || _b === void 0 ? void 0 : _b.getBoundingClientRect().right), gEnd = Number((_c = this.shadow.querySelector('.column-container div:nth-child(2)')) === null || _c === void 0 ? void 0 : _c.getBoundingClientRect().left), gw = gEnd - gStart;
-            return `${n * cw + (n - 1) * gw}px`;
-        }
-        if (prop === 'gap-width') {
-            const W = Number((_d = this.shadow.querySelector('.column-container')) === null || _d === void 0 ? void 0 : _d.getBoundingClientRect().width), cw = Number((_e = this.shadow.querySelector('.column-container div')) === null || _e === void 0 ? void 0 : _e.getBoundingClientRect().width);
-            return `${(W - n * cw) / (n - 1)}px`;
-        }
-        if (prop === 'column-width') {
-            const W = Number((_f = this.shadow.querySelector('.column-container')) === null || _f === void 0 ? void 0 : _f.getBoundingClientRect().width), gStart = Number((_g = this.shadow.querySelector('.column-container div')) === null || _g === void 0 ? void 0 : _g.getBoundingClientRect().right), gEnd = Number((_h = this.shadow.querySelector('.column-container div:nth-child(2)')) === null || _h === void 0 ? void 0 : _h.getBoundingClientRect().left), gw = gEnd - gStart;
-            return `${(W - (n - 1) * gw) / n}px`;
-        }
-        return '0px';
+    getComputedWidthValueFromClientRect(attr) {
+        var _a;
+        const ctr = this.shadow.querySelector('.column-container'), col = ctr === null || ctr === void 0 ? void 0 : ctr.querySelector('div'), n = Number(this.columns), W = Number(ctr === null || ctr === void 0 ? void 0 : ctr.getBoundingClientRect().width), cw = Number(col === null || col === void 0 ? void 0 : col.getBoundingClientRect().width), gw = Number((_a = ctr === null || ctr === void 0 ? void 0 : ctr.querySelector('div:nth-child(2)')) === null || _a === void 0 ? void 0 : _a.getBoundingClientRect().left)
+            - Number(col === null || col === void 0 ? void 0 : col.getBoundingClientRect().right);
+        const compute = {
+            'grid-width': `${n * cw + (n - 1) * gw}px`,
+            'column-width': `${(W - (n - 1) * gw) / n}px`,
+            'gap-width': `${(W - n * cw) / (n - 1)}px`
+        };
+        return compute[attr];
     }
     listenKey() {
         window.addEventListener('keydown', (event) => {
@@ -172,11 +169,9 @@ export class GridChecker extends HTMLElement {
         });
     }
     getTemplateColumns() {
-        let templateColumns = '';
-        for (let i = 0; i < Number(this.columns); i++) {
-            templateColumns += '<div></div>';
-        }
-        return templateColumns;
+        return ([...Array(this.columns)]
+            .map(() => '<div></div>')
+            .join(''));
     }
     getStyle() {
         return `
@@ -238,6 +233,7 @@ export class GridChecker extends HTMLElement {
             gridChecker.style.height = `${target.getBoundingClientRect().height}px`;
             window.addEventListener('scroll', () => gridChecker.style.top = `${target.getBoundingClientRect().top}px`);
         }
+        this.html = gridChecker;
     }
     log() {
         console.table({

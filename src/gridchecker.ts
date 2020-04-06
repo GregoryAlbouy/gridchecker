@@ -1,16 +1,13 @@
 /**
- * TODO: attachBreakpoint(object options, string breakpoint) -> mediaquery-like
- * TODO: find a way to make a definitive connection between the object attribute,
- * its html name and its value, e.g. columnWidth: { name:'column-width', value: null }
- * to avoid very long switch statements
- * TODO: update event listener after "key" attribute change
- * TODO: add GridCheckerController
- * TODO: attribute controls -> panel to change values directly in the document
- * TODO: attribute debug -> console.table
- * TODO: error when W !== n*cw + (n-1)*gw (when user enters all 3 values)
+ * FIX: update event listener after "key" attribute change
  * 
- * devtools test:
- * gc = document.querySelector('grid-checker')
+ * TODO: find a way to make a definitive connection between the object attribute,
+ * its html name and its value to replace long switch statements,
+ * e.g. columnWidth = { name:'column-width', value: null } or Enum
+ * TODO: error when W !== n*cw + (n-1)*gw (when user enters all 3 values)
+ * TODO: use ts Enum for list of 'false' values (for boolean attributes checks)
+ * TODO: add prop condition(callback(): boolean)
+ * TODO: add prop breakpoint(options: object, breakpoint: string)
  */
 class GridChecker extends HTMLElement
 {
@@ -23,7 +20,7 @@ class GridChecker extends HTMLElement
 
     static attributes = ['columns', 'grid-width', 'column-width', 'gap-width', 'offset-x', 'offset-y', 'z-index', 'color', 'key']
 
-    columns: string | null = null
+    columns: number | null = null
     gridWidth: string | null = null
     columnWidth: string | null = null
     gapWidth: string | null = null
@@ -32,12 +29,13 @@ class GridChecker extends HTMLElement
     zIndex: string = '1000000'
     color: string = 'rgba(200, 50, 200, .4)'
     key: string = 'g'
-    // controls: boolean = false
     debug: boolean = false
 
-    renderAmount: number = 0
-    shadow: ShadowRoot
     isListeningToAttributes: boolean = false
+    renderAmount: number = 0
+
+    html: object = this
+    shadow: ShadowRoot
 
     constructor(options: object)
     {
@@ -52,46 +50,32 @@ class GridChecker extends HTMLElement
         return GridChecker.attributes
     }
 
-    attributeChangedCallback(name: string, oldValue: string, newValue: string): void
+    attributeChangedCallback(name: string, _: string, value: string)
     {
         if (!this.isListeningToAttributes) return
         if (!this.attributesAreValid()) return
 
-        this.setProperty(name, newValue)
+        this.setProperty(name, value)
     }
 
     connectedCallback()
     {
         this.init()
-
-        this.isListeningToAttributes = true
-
-        if (!this.attributesAreValid()) return
-
         this.render()
         this.setRemainingWidthValue(false)
         this.render()
         this.listenKey()
 
-        // // Work in progress
-        // this.setControls()
+        this.isListeningToAttributes = true
+
         if (this.debug) this.log()
     }
-
-    // setControls()
-    // {
-    //     if (this.getAttribute('controls') !== null) this.controls = true
-
-    //     if (!this.controls) return
-
-    //     // TODO...
-    // }
 
     init()
     {
         if (!this.attributesAreValid()) return
 
-        this.columns     = this.getAttribute('columns')      || this.columns
+        this.columns     = Math.floor(Number(this.getAttribute('columns'))) || this.columns
         this.gridWidth   = this.getAttribute('grid-width')   || this.gridWidth
         this.columnWidth = this.getAttribute('column-width') || this.columnWidth
         this.gapWidth    = this.getAttribute('gap-width')    || this.gapWidth
@@ -100,7 +84,6 @@ class GridChecker extends HTMLElement
         this.zIndex      = this.getAttribute('z-index')      || this.zIndex
         this.color       = this.getAttribute('color')        || this.color
         this.key         = this.getAttribute('key')          || this.key
-        // this.controls    = this.getAttribute('controls') !== null ? true : false
         this.debug       = !(this.getAttribute('debug') === "false"
                          || this.getAttribute('debug') === "0"
                          || this.getAttribute('debug') === null)
@@ -113,6 +96,8 @@ class GridChecker extends HTMLElement
             gridWidth = this.getAttribute('grid-width'),
             columnWidth = this.getAttribute('column-width'),
             gapWidth = this.getAttribute('gap-width')
+        
+        // const isColNbvalid = (columns) => {}
 
         let attributesAreValid = true
 
@@ -138,7 +123,7 @@ class GridChecker extends HTMLElement
     setProperty(attribute: string, value: string)
     {
         switch (attribute) {
-            case 'columns':      this.columns = value
+            case 'columns':      this.columns = Math.floor(Number(value))
                 this.render()
                 this.setRemainingWidthValue(true)
                 break
@@ -164,10 +149,12 @@ class GridChecker extends HTMLElement
                 break
             case 'key':          this.key = value
                 break
-            // case 'controls':     this.controls = this.getAttribute('controls') !== null ? true : false
-            //     break
-            case 'debug':        this.debug = this.getAttribute('debug') !== null ? true : false
-            default:             this.warn(`GridChecker warning: unknown attribute "${attribute}".`)
+            case 'debug':
+                this.debug = !(this.getAttribute('debug') === "false"
+                            || this.getAttribute('debug') === "0"
+                            || this.getAttribute('debug') === null)
+                break
+            default: this.warn(`GridChecker warning: unknown attribute "${attribute}".`)
         }
 
         if (this.debug) this.log()
@@ -223,43 +210,26 @@ class GridChecker extends HTMLElement
      * Get missing width value:
      * Uses the client rect rended by the browser
      * Pros: no more unit dependencies
-     * Cons: must wait for the grid to be rendered
-     * 
-     * TODO: refactor
+     * Cons: must wait for the grid to be rendered and then re-render
      */
-    getComputedWidthValueFromClientRect(prop: string): string
+    getComputedWidthValueFromClientRect(attr: string): string
     {
-        const n = Number(this.columns)
+        const
+            ctr = this.shadow.querySelector('.column-container'),
+            col = ctr?.querySelector('div'),
+            n   = Number(this.columns),
+            W   = Number(ctr?.getBoundingClientRect().width),
+            cw  = Number(col?.getBoundingClientRect().width),
+            gw  = Number(ctr?.querySelector('div:nth-child(2)')?.getBoundingClientRect().left)
+                - Number(col?.getBoundingClientRect().right)
 
-        if (prop === 'grid-width') {
-            const
-                cw = Number(this.shadow.querySelector('.column-container div')?.getBoundingClientRect().width),
-                gStart = Number(this.shadow.querySelector('.column-container div')?.getBoundingClientRect().right),
-                gEnd = Number(this.shadow.querySelector('.column-container div:nth-child(2)')?.getBoundingClientRect().left),
-                gw = gEnd - gStart
-
-            return `${n * cw + (n - 1) * gw}px`
+        const compute: any = {
+            'grid-width': `${n * cw + (n - 1) * gw}px`,
+            'column-width': `${(W - (n - 1) * gw) / n}px`,
+            'gap-width': `${(W - n * cw) / (n - 1)}px`
         }
 
-        if (prop === 'gap-width') {
-            const
-                W = Number(this.shadow.querySelector('.column-container')?.getBoundingClientRect().width),
-                cw = Number(this.shadow.querySelector('.column-container div')?.getBoundingClientRect().width)
-
-            return `${(W - n * cw) / (n - 1)}px`
-        }
-
-        if (prop === 'column-width') {
-            const
-                W = Number(this.shadow.querySelector('.column-container')?.getBoundingClientRect().width),
-                gStart = Number(this.shadow.querySelector('.column-container div')?.getBoundingClientRect().right),
-                gEnd = Number(this.shadow.querySelector('.column-container div:nth-child(2)')?.getBoundingClientRect().left),
-                gw = gEnd - gStart
-
-            return `${(W - (n - 1) * gw) / n}px`
-        }
-
-        return '0px'
+        return compute[attr]
     }
 
     listenKey()
@@ -269,18 +239,16 @@ class GridChecker extends HTMLElement
         })
     }
 
-    getTemplateColumns()
+    getTemplateColumns(): string
     {
-        let templateColumns = ''
-
-        for (let i = 0; i < Number(this.columns); i++) {
-            templateColumns += '<div></div>'
-        }
-
-        return templateColumns
+        return (
+            [...Array(this.columns)]
+                .map(() => '<div></div>')
+                .join('')
+        );
     }
 
-    getStyle()
+    getStyle(): string
     {
         return `
             :host {
@@ -329,7 +297,6 @@ class GridChecker extends HTMLElement
         if (options.zIndex)      gridChecker.setAttribute('z-index', options.zIndex)
         if (options.color)       gridChecker.setAttribute('color', options.color)
         if (options.key)         gridChecker.setAttribute('key', options.key)
-        // if (options.controls)    gridChecker.setAttribute('controls', options.controls)
         if (options.debug)       gridChecker.setAttribute('debug', options.debug)
 
         target.appendChild(gridChecker)
@@ -341,12 +308,7 @@ class GridChecker extends HTMLElement
             window.addEventListener('scroll', () => gridChecker.style.top = `${target.getBoundingClientRect().top}px`)
         }
 
-        /*
-        // Auto-assignment: also check if toDashCase(key) is in array 'attributes'
-        for (let key in options) { 
-            gridChecker.setAttribute(this.toDashCase(key), options[key])
-        }
-        */
+        this.html = gridChecker
     }
 
     log()
@@ -361,7 +323,6 @@ class GridChecker extends HTMLElement
             zIndex:      { 'value': this.zIndex,      'getAttribute()': this.getAttribute('z-index') },
             color:       { 'value': this.color,       'getAttribute()': this.getAttribute('color') },
             key:         { 'value': this.key,         'getAttribute()': this.getAttribute('key') },
-            // controls:    { 'value': this.controls,    'getAttribute()': this.getAttribute('controls') },
             debug:       { 'value': this.debug,       'getAttribute()': this.getAttribute('debug') }
         })
         console.log(this)
