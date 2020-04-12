@@ -66,7 +66,7 @@ class GridChecker extends HTMLElement
         const matchedPropKey =  Object.keys(this.props).find((key) => this.props[key].attr === name) as string
         const matchedProp = this.props[matchedPropKey]
         
-        this.setProperty(matchedProp, value)
+        this.set(matchedProp, value)
     }
 
     connectedCallback()
@@ -87,7 +87,7 @@ class GridChecker extends HTMLElement
     init()
     {
         const setValues = (propName: string) => {
-            this.setProperty(this.props[propName], this.getAttribute(this.props[propName].attr))
+            this.set(this.props[propName], this.getAttribute(this.props[propName].attr))
         }
 
         const constrainToParent = () => {
@@ -132,7 +132,7 @@ class GridChecker extends HTMLElement
         return !errors.length
     }
 
-    setProperty(prop: Property, value: string | null)
+    set(prop: Property, value: string | null)
     {
         prop.val = this.getProcessedValue(prop, value)
 
@@ -142,6 +142,10 @@ class GridChecker extends HTMLElement
         this.render()
     }
  
+    /**
+     * Converts string values from html attributes to the expected type
+     * depending on the property
+     */
     getProcessedValue(prop: Property, value: string | null)
     {
         const process: any = {
@@ -153,6 +157,9 @@ class GridChecker extends HTMLElement
         return process[`${typeof prop.val}`]
         }
 
+    /**
+     * Identifies and sets the missing width information (if applicable).
+     */
     setRemainingWidthValue()
     {
         const widthValues = [this.props.gridWidth, this.props.columnWidth, this.props.gapWidth]
@@ -205,6 +212,9 @@ class GridChecker extends HTMLElement
         })
     }
 
+    /**
+     * Returns as a string a number of divs equal to the number of columns
+     */
     getTemplateColumns(): string
     {
         return (
@@ -248,6 +258,10 @@ class GridChecker extends HTMLElement
         `
     }
 
+    /**
+     * Processes and appends the element to the DOM
+     * (when created via the constructor using new GridChecker())
+     */
     createElement(options: any)
     {
         const
@@ -263,6 +277,10 @@ class GridChecker extends HTMLElement
         this.html = gridChecker as this
     }
 
+    /**
+     * If debug is activated, logs handful informations on dom connection
+     * and attribute change
+     */
     log()
     {
         if (!this.props.debug.val) return

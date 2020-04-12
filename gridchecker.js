@@ -31,7 +31,7 @@ class GridChecker extends HTMLElement {
             return;
         const matchedPropKey = Object.keys(this.props).find((key) => this.props[key].attr === name);
         const matchedProp = this.props[matchedPropKey];
-        this.setProperty(matchedProp, value);
+        this.set(matchedProp, value);
     }
     connectedCallback() {
         if (!this.attributesAreValid())
@@ -45,7 +45,7 @@ class GridChecker extends HTMLElement {
     }
     init() {
         const setValues = (propName) => {
-            this.setProperty(this.props[propName], this.getAttribute(this.props[propName].attr));
+            this.set(this.props[propName], this.getAttribute(this.props[propName].attr));
         };
         const constrainToParent = () => {
             const parent = this.html.parentNode;
@@ -72,7 +72,7 @@ class GridChecker extends HTMLElement {
         errors.forEach((err) => this.warn(err.msg, err.src));
         return !errors.length;
     }
-    setProperty(prop, value) {
+    set(prop, value) {
         prop.val = this.getProcessedValue(prop, value);
         if (prop.isWidth)
             this.setRemainingWidthValue();
