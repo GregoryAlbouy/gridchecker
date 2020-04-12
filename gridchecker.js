@@ -175,8 +175,11 @@ class GridChecker extends HTMLElement {
         if (!this.props.debug.val)
             return;
         const debug = {};
-        Object.entries(this.props).forEach(([propName, prop]) => {
-            debug[propName] = { 'value': prop.val, 'getAttribute()': this.getAttribute(prop.attr) };
+        Object.keys(this.props).forEach((propName) => {
+            debug[propName] = {
+                'value': this.props[propName].val,
+                'getAttribute()': this.getAttribute(this.props[propName].attr)
+            };
         });
         console.table(debug);
         console.log(`rendered: ${this.rendered}`, this.html);

@@ -5,10 +5,10 @@
  * TODO: add prop condition(callback(): boolean)
  * TODO: add prop breakpoint(options: object, breakpoint: string)
  */
-type PropertyList = {
+interface PropertyList {
     [name: string]: Property
 }
-type Property = {
+interface Property {
     attr: string,
     val: boolean | number | string | HTMLElement
     isWidth: boolean
@@ -269,8 +269,11 @@ class GridChecker extends HTMLElement
 
         const debug: any = {}
 
-        Object.entries(this.props).forEach(([propName, prop]: Array<any>) => {
-            debug[propName] = { 'value': prop.val, 'getAttribute()': this.getAttribute(prop.attr) }
+        Object.keys(this.props).forEach((propName: string) => {
+            debug[propName] = {
+                'value': this.props[propName].val,
+                'getAttribute()': this.getAttribute(this.props[propName].attr)
+            }
         })
 
         console.table(debug)
