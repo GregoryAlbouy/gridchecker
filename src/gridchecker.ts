@@ -1,10 +1,4 @@
-/**
- * FIX: update event listener after "key" attribute change
- * 
- * TODO: error when W !== n*cw + (n-1)*gw (when user enters all 3 values)
- * TODO: add prop condition(callback(): boolean)
- * TODO: add prop breakpoint(options: object, breakpoint: string)
- */
+
 interface PropertyDict {
     [propName: string]: Property
 }
@@ -14,6 +8,7 @@ interface Property {
     val: boolean | number | string | HTMLElement
     isWidth: boolean
 }
+
 interface GridCheckerError {
     msg: string,
     src: any

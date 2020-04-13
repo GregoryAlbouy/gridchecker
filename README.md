@@ -8,12 +8,12 @@ It simply creates a highly configurable grid directly in the document, using ES6
 
 * Classic way:
     ```html
-    <script src="path/to/gridchecker.min.js"></script>
+    <script src="path/to/gridchecker.js"></script>
     ```
 
 * Using ES6 modules:
     ```javascript
-    import { GridChecker } from './path/to/gridchecker.module.min.js'
+    import { GridChecker } from './path/to/gridchecker.module.js'
     ```
 
 ## Render
