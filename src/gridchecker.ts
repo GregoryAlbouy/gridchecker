@@ -132,6 +132,9 @@ class GridChecker extends HTMLElement
         return !errors.length
     }
 
+    /**
+     * Generic setter
+     */
     set(prop: Property, value: string | null)
     {
         prop.val = this.getProcessedValue(prop, value)
