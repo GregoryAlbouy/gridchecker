@@ -5,14 +5,23 @@
  * TODO: add prop condition(callback(): boolean)
  * TODO: add prop breakpoint(options: object, breakpoint: string)
  */
-interface PropertyList {
-    [name: string]: Property
+interface PropertyDict {
+    [propName: string]: Property
 }
+
 interface Property {
     attr: string,
     val: boolean | number | string | HTMLElement
     isWidth: boolean
 }
+interface GridCheckerError {
+    msg: string,
+    src: any
+}
+
+type stringProcessor = { [key: string]: boolean | number | string }
+type optionsObject = { [key:string]: any }
+
 class GridChecker extends HTMLElement
 {
     static error = {
@@ -25,7 +34,7 @@ class GridChecker extends HTMLElement
 
     static attributes = ['columns', 'grid-width', 'column-width', 'gap-width', 'offset-x', 'offset-y', 'z-index', 'color', 'key']
 
-    props: PropertyList = {
+    props: PropertyDict = {
         columns:     { attr: 'columns',      val: 0,                     isWidth: true },
         gridWidth:   { attr: 'grid-width',   val: '',                    isWidth: true },
         columnWidth: { attr: 'column-width', val: '',                    isWidth: true },
@@ -127,7 +136,7 @@ class GridChecker extends HTMLElement
             errors.push({ msg: GridChecker.error.MISSING_WIDTH_VAL, src: null })
         }
 
-        errors.forEach((err: any) => this.warn(err.msg, err.src))
+        errors.forEach((err: GridCheckerError) => this.warn(err.msg, err.src))
 
         return !errors.length
     }
@@ -150,15 +159,15 @@ class GridChecker extends HTMLElement
      * depending on the property
      */
     getProcessedValue(prop: Property, value: string | null)
-    {
-        const process: any = {
+    {        
+        const process: stringProcessor = {
             boolean: !(value === "false" || value === "0" || value === null),
             number: Math.floor(Number(value)),
             string: value || `${prop.val}`
         }
 
-        return process[`${typeof prop.val}`]
-        }
+        return process[typeof prop.val]
+    }
 
     /**
      * Identifies and sets the missing width information (if applicable).
@@ -171,7 +180,7 @@ class GridChecker extends HTMLElement
         const getComputedWidthValueFromClientRect = (attr: string) => {
             // Needs to pre-render before accessing getBoundingClientRect()
             this.render()
-    
+
             const
                 ctr = this.shadow.querySelector('.column-container'),
                 col = ctr!.querySelector('div'),
@@ -181,7 +190,7 @@ class GridChecker extends HTMLElement
                 gw  = Number(ctr!.querySelector('div:nth-child(2)')!.getBoundingClientRect().left)
                     - Number(col!.getBoundingClientRect().right)
     
-            const computed: any = {
+            const computed: stringProcessor = {
                 'grid-width': `${n * cw + (n - 1) * gw}px`,
                 'column-width': `${(W - (n - 1) * gw) / n}px`,
                 'gap-width': `${(W - n * cw) / (n - 1)}px`
@@ -265,7 +274,7 @@ class GridChecker extends HTMLElement
      * Processes and appends the element to the DOM
      * (when created via the constructor using new GridChecker())
      */
-    createElement(options: any)
+    createElement(options: optionsObject)
     {
         const
             gridChecker = document.createElement('grid-checker'),
@@ -288,7 +297,7 @@ class GridChecker extends HTMLElement
     {
         if (!this.props.debug.val) return
 
-        const debug: any = {}
+        const debug: optionsObject = {}
 
         Object.keys(this.props).forEach((propName: string) => {
             debug[propName] = {

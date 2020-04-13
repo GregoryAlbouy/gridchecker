@@ -85,7 +85,7 @@ class GridChecker extends HTMLElement {
             number: Math.floor(Number(value)),
             string: value || `${prop.val}`
         };
-        return process[`${typeof prop.val}`];
+        return process[typeof prop.val];
     }
     setRemainingWidthValue() {
         const widthValues = [this.props.gridWidth, this.props.columnWidth, this.props.gapWidth];
