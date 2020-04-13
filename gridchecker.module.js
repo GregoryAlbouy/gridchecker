@@ -1,4 +1,4 @@
-class GridChecker extends HTMLElement {
+export class GridChecker extends HTMLElement {
     constructor(options) {
         super();
         this.props = {
