@@ -55,7 +55,7 @@ Here is the list of available attributes to set up the grid.
 | `z-index` | `zIndex` | CSS value for z-index. | *optional* | `"1000000"` |
 | `color` | `color` | CSS value for the grid's color. | *optional* | `"rgba(200, 50, 200, .4)"` |
 | `key` | `key` | A single character used to toggle the grid on key down. | *optional* | `"g"` |
-| N/A | `target` | In progress: not yet available | *optional* | `document.body` |
+| N/A | `target` | HTML Element in which the grid should be appended, when using the constructor. | *optional* | `document.body` |
 | `debug` | `debug` | If not null nor false nor 0, shows a table of all values on creation and after every updates | *optional* | `false`
 
 \*: Two of the three `*-width` values are **required**, the last one is *optional* as it is computed if not also set by the user.
