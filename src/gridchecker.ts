@@ -1,22 +1,3 @@
-
-interface PropertyDict {
-    [propName: string]: Property
-}
-
-interface Property {
-    attr: string,
-    val: boolean | number | string | HTMLElement
-    isWidth: boolean
-}
-
-interface GridCheckerError {
-    msg: string,
-    src: any
-}
-
-type stringProcessor = { [key: string]: boolean | number | string }
-type optionsObject = { [key:string]: any }
-
 class GridChecker extends HTMLElement
 {
     static error = {
