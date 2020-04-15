@@ -1,3 +1,6 @@
+import TEMPLATE_HTML from './template.html'
+import TEMPLATE_CSS from './style.css'
+
 class GridChecker extends HTMLElement
 {
     static error = {
@@ -15,8 +18,8 @@ class GridChecker extends HTMLElement
         gridWidth:   { attr: 'grid-width',   val: '',                    isWidth: true },
         columnWidth: { attr: 'column-width', val: '',                    isWidth: true },
         gapWidth:    { attr: 'gap-width',    val: '',                    isWidth: true },
-        offsetX:     { attr: 'offset-x',     val: '',                    isWidth: false },
-        offsetY:     { attr: 'offset-y',     val: '',                    isWidth: false },
+        offsetX:     { attr: 'offset-x',     val: '0px',                 isWidth: false },
+        offsetY:     { attr: 'offset-y',     val: '0px',                 isWidth: false },
         zIndex:      { attr: 'z-index',      val: '1000000',             isWidth: false },
         color:       { attr: 'color',        val: 'rgba(200,50,200,.4)', isWidth: false },
         key:         { attr: 'key',          val: 'g',                   isWidth: false },
@@ -27,7 +30,7 @@ class GridChecker extends HTMLElement
     isInitialized = false
     rendered = 0
 
-    html = this
+    dom = this
     shadow: ShadowRoot
 
     constructor(options: object)
@@ -43,7 +46,7 @@ class GridChecker extends HTMLElement
         return GridChecker.attributes
     }
 
-    attributeChangedCallback(name: string, _: any, value: string)
+    attributeChangedCallback(name: string, _: any, value: string): void
     {
         if (!this.isInitialized) return
         if (!this.attributesAreValid()) return
@@ -54,7 +57,7 @@ class GridChecker extends HTMLElement
         this.set(matchedProp, value)
     }
 
-    connectedCallback()
+    connectedCallback(): void
     {
         if (!this.attributesAreValid()) return
 
@@ -69,18 +72,18 @@ class GridChecker extends HTMLElement
     /**
      * Sets all property values from the html attributes
      */
-    init()
+    init(): void
     {
         const setValues = (propName: string) => {
             this.set(this.props[propName], this.getAttribute(this.props[propName].attr))
         }
 
         const constrainToParent = () => {
-            const parent = this.html.parentNode as HTMLElement
-            const updatePosition = () => this.html.style.top = `${parent.getBoundingClientRect().top}px`
+            const parent = this.dom.parentNode as HTMLElement
+            const updatePosition = () => this.dom.style.top = `${parent.getBoundingClientRect().top}px`
             
-            this.html.style.top = `${parent.getBoundingClientRect().top}px`
-            this.html.style.height = `${parent.getBoundingClientRect().height}px`
+            this.dom.style.top = `${parent.getBoundingClientRect().top}px`
+            this.dom.style.height = `${parent.getBoundingClientRect().height}px`
             
             window.addEventListener('scroll', updatePosition)
         }
@@ -120,23 +123,23 @@ class GridChecker extends HTMLElement
     /**
      * Generic setter
      */
-    set(prop: Property, value: string | null)
+    set(prop: Property, value: string | null): void
     {
         prop.val = this.getProcessedValue(prop, value)
 
         if (prop.isWidth) this.setRemainingWidthValue()
+        if (this.isInitialized) this.render()
 
         this.log()
-        this.render()
     }
  
     /**
      * Converts string values from html attributes to the expected type
      * depending on the property
      */
-    getProcessedValue(prop: Property, value: string | null)
+    getProcessedValue(prop: Property, value: string | null): boolean | number  | string
     {        
-        const process: stringProcessor = {
+        const process: StringProcessor = {
             boolean: !(value === "false" || value === "0" || value === null),
             number: Math.floor(Number(value)),
             string: value || `${prop.val}`
@@ -148,7 +151,7 @@ class GridChecker extends HTMLElement
     /**
      * Identifies and sets the missing width information (if applicable).
      */
-    setRemainingWidthValue()
+    setRemainingWidthValue(): void
     {
         const widthValues = [this.props.gridWidth, this.props.columnWidth, this.props.gapWidth]
         let missingValue: Property | undefined
@@ -166,7 +169,7 @@ class GridChecker extends HTMLElement
                 gw  = Number(ctr!.querySelector('div:nth-child(2)')!.getBoundingClientRect().left)
                     - Number(col!.getBoundingClientRect().right)
     
-            const computed: stringProcessor = {
+            const computed: StringProcessor = {
                 'grid-width': `${n * cw + (n - 1) * gw}px`,
                 'column-width': `${(W - (n - 1) * gw) / n}px`,
                 'gap-width': `${(W - n * cw) / (n - 1)}px`
@@ -180,20 +183,34 @@ class GridChecker extends HTMLElement
         missingValue.val = getComputedWidthValueFromClientRect(missingValue.attr)
     }
 
-    render()
+    render(): void
     {
-        this.shadow.innerHTML = `
-            <style>
-                ${this.getStyle()}
-            </style>
-            <div class="column-container">
-                ${this.getTemplateColumns()}
-            </div>
-        `
-        this.rendered += 1
+        const getElements: () => elementDict = () => {
+            return {
+                style: this.shadow.querySelector('style')!,
+                container: this.shadow.querySelector('.column-container')!
+            }
+        }
+
+        const getTemplateColumns: () => string = () => {
+            return [...Array(this.props.columns.val)]
+                .map(() => '<div></div>')
+                .join('')
+        }
+
+        const getStyle: () => string = () => {
+            return TEMPLATE_CSS
+                .replace(/"{{\s?([\w]+)\s?}}"/g, (_, propName) => `${this.props[propName].val}`)
+        }
+
+        this.shadow.innerHTML = TEMPLATE_HTML
+        getElements().style.textContent = getStyle()
+        getElements().container.innerHTML = getTemplateColumns()
+
+        this.rendered += 1 
     }
 
-    listenKey()
+    listenKey(): void
     {
         window.addEventListener('keydown', (event) => {
             if (event.key === this.props.key.val) this.toggleAttribute('hidden')
@@ -201,56 +218,10 @@ class GridChecker extends HTMLElement
     }
 
     /**
-     * Returns as a string a number of divs equal to the number of columns
-     */
-    getTemplateColumns(): string
-    {
-        return (
-            [...Array(this.props.columns.val)]
-                .map(() => '<div></div>')
-                .join('')
-        );
-    }
-
-    getStyle(): string
-    {
-        return `
-            :host {
-                display: block;
-                position: fixed;
-                top: 0;
-                left: 0;
-                z-index: ${this.props.zIndex.val};
-                width: 100%;
-                height: 100%;
-            }
-            :host([hidden]) { display: none; }
-            .column-container {
-                position: relative;
-                ${this.props.offsetY.val ? 'top: ' + this.props.offsetY.val : ''};
-                ${this.props.offsetX.val ? 'left: ' + this.props.offsetX.val : ''};
-                width: ${this.props.gridWidth.val};
-                height: 100%;
-                margin: auto;
-                font-size: 0;
-            }
-            .column-container div {
-                display: inline-block;
-                width: ${this.props.columnWidth.val};
-                height: 100%;
-                background: ${this.props.color.val};
-            }
-            .column-container div:not(:last-of-type) {
-                margin-right: ${this.props.gapWidth.val};
-            }
-        `
-    }
-
-    /**
      * Processes and appends the element to the DOM
      * (when created via the constructor using new GridChecker())
      */
-    createElement(options: optionsObject)
+    createElement(options: optionsDict): void
     {
         const
             gridChecker = document.createElement('grid-checker'),
@@ -262,18 +233,18 @@ class GridChecker extends HTMLElement
         })
 
         target.appendChild(gridChecker)
-        this.html = gridChecker as this
+        this.dom = gridChecker as this
     }
 
     /**
      * If debug is activated, logs handful informations on dom connection
      * and attribute change
      */
-    log()
+    log(): void
     {
         if (!this.props.debug.val) return
 
-        const debug: optionsObject = {}
+        const debug: optionsDict = {}
 
         Object.keys(this.props).forEach((propName: string) => {
             debug[propName] = {
@@ -283,10 +254,10 @@ class GridChecker extends HTMLElement
         })
 
         console.table(debug)
-        console.log(`rendered: ${this.rendered}`, this.html)
+        console.log(`rendered: ${this.rendered}`, this.dom)
     }
 
-    warn(message: string, source: any)
+    warn(message: string, source: any): void
     {
         const detail = source ? ` (input: ${source})` : ''
         console.warn('%c  ', `background: ${this.props.color.val}`, `${message + detail}`, this)
@@ -296,3 +267,4 @@ class GridChecker extends HTMLElement
 
 // 'as any': workaround to avoid TypeScript bug.
 customElements.define('grid-checker', GridChecker as any)
+Object.defineProperty(window, 'GridChecker', { value: GridChecker })

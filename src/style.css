@@ -1,0 +1,29 @@
+
+:host {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: "{{ zIndex }}";
+    width: 100%;
+    height: 100%;
+}
+:host([hidden]) { display: none; }
+.column-container {
+    position: relative;
+    top: "{{ offsetY }}";
+    left: "{{ offsetX }}";
+    width: "{{ gridWidth }}";
+    height: 100%;
+    margin: auto;
+    font-size: 0;
+}
+.column-container div {
+    display: inline-block;
+    width: "{{ columnWidth }}";
+    height: 100%;
+    background: "{{ color }}";
+}
+.column-container div:not(:last-of-type) {
+    margin-right: "{{ gapWidth }}";
+}

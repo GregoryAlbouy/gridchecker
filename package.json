@@ -1,0 +1,29 @@
+{
+  "name": "gridchecker",
+  "version": "1.0.0",
+  "description": "Grid checker is a simple tool I developped to make sure an integration respects the designer's original grid.   It simply creates a highly configurable grid directly in the document, using ES6 classes and Web components.",
+  "main": "",
+  "scripts": {
+    "start": "webpack --watch",
+    "build": "webpack --mode=production"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gregoryalbouy/gridchecker.git"
+  },
+  "author": "Gregory Albouy",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gregoryalbouy/gridchecker/issues"
+  },
+  "homepage": "https://github.com/gregoryalbouy/gridchecker#readme",
+  "devDependencies": {
+    "css-loader": "^3.5.2",
+    "html-loader": "^1.1.0",
+    "to-string-loader": "^1.1.6",
+    "ts-loader": "^7.0.0",
+    "typescript": "^3.8.3",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11"
+  }
+}

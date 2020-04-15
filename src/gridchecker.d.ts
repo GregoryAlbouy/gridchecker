@@ -13,5 +13,9 @@ declare interface GridCheckerError {
     src: any
 }
 
-declare type stringProcessor = { [key: string]: boolean | number | string }
-declare type optionsObject = { [key:string]: any }
+declare interface StringProcessor {
+    [key: string]: boolean | number | string
+}
+
+declare type elementDict = { [key:string]: Element }
+declare type optionsDict = { [key:string]: any }
