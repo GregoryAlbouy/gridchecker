@@ -81,6 +81,8 @@ class GridChecker extends HTMLElement
         const constrainToParent = () => {
             const parent = this.dom.parentNode as HTMLElement
             const updatePosition = () => this.dom.style.top = `${parent.getBoundingClientRect().top}px`
+
+            if (parent === document.body) return
             
             this.dom.style.top = `${parent.getBoundingClientRect().top}px`
             this.dom.style.height = `${parent.getBoundingClientRect().height}px`
