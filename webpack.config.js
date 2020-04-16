@@ -1,7 +1,7 @@
 const path = require("path");
 
 const config = {
-    mode: "production",
+    mode: "development",
     entry: "./src/gridchecker.ts",
     devtool: 'false',
     module: {

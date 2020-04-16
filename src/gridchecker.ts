@@ -81,6 +81,8 @@ class GridChecker extends HTMLElement
         const constrainToParent = () => {
             const parent = this.dom.parentNode as HTMLElement
             const updatePosition = () => this.dom.style.top = `${parent.getBoundingClientRect().top}px`
+
+            if (parent === document.body) return
             
             this.dom.style.top = `${parent.getBoundingClientRect().top}px`
             this.dom.style.height = `${parent.getBoundingClientRect().height}px`
@@ -153,21 +155,24 @@ class GridChecker extends HTMLElement
      */
     setRemainingWidthValue(): void
     {
-        const widthValues = [this.props.gridWidth, this.props.columnWidth, this.props.gapWidth]
         let missingValue: Property | undefined
+        const widthValues = [this.props.gridWidth, this.props.columnWidth, this.props.gapWidth]
+
         const getMissingValue = () => widthValues.find(prop => !this.getAttribute(prop.attr))
+
         const getComputedWidthValueFromClientRect = (attr: string) => {
             // Needs to pre-render before accessing getBoundingClientRect()
             this.render()
 
             const
-                ctr = this.shadow.querySelector('.column-container'),
-                col = ctr!.querySelector('div'),
-                n   = Number(this.props.columns.val),
-                W   = Number(ctr!.getBoundingClientRect().width),
-                cw  = Number(col!.getBoundingClientRect().width),
-                gw  = Number(ctr!.querySelector('div:nth-child(2)')!.getBoundingClientRect().left)
-                    - Number(col!.getBoundingClientRect().right)
+                ctr = this.shadow.querySelector('.column-container')!,
+                col = ctr.querySelector('div')!,
+                cl2 = ctr.querySelector('div:nth-child(2)')!,
+                n   = Number(this.props.columns.val),            // number of columns
+                W   = Number(ctr.getBoundingClientRect().width), // actual grid width
+                cw  = Number(col.getBoundingClientRect().width), // actual column width
+                gw  = Number(cl2.getBoundingClientRect().left)   // actual gap width
+                      - Number(col.getBoundingClientRect().right) 
     
             const computed: StringProcessor = {
                 'grid-width': `${n * cw + (n - 1) * gw}px`,
@@ -212,9 +217,11 @@ class GridChecker extends HTMLElement
 
     listenKey(): void
     {
-        window.addEventListener('keydown', (event) => {
+        const toggleHidden = (event: KeyboardEvent) => {
             if (event.key === this.props.key.val) this.toggleAttribute('hidden')
-        })
+        }
+
+        window.addEventListener('keydown', toggleHidden)
     }
 
     /**
@@ -246,12 +253,18 @@ class GridChecker extends HTMLElement
 
         const debug: optionsDict = {}
 
-        Object.keys(this.props).forEach((propName: string) => {
-            debug[propName] = {
+        const discloseIdentity = (propName: string) => {
+            return {
                 'value': this.props[propName].val,
                 'getAttribute()': this.getAttribute(this.props[propName].attr)
             }
-        })
+        }
+
+        const newDebugEntry = (propName: string) => {
+            debug[propName] = discloseIdentity(propName)
+        }
+
+        Object.keys(this.props).forEach(newDebugEntry)
 
         console.table(debug)
         console.log(`rendered: ${this.rendered}`, this.dom)
